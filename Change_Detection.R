@@ -10,11 +10,11 @@ oil_ts
 
 # Change points library
 library(EnvCpt)
-
+x <- as.integer()
 # define models to be used to find Change points
 models <- c("trendar1cpt", "trendar2cpt")
-# Find Change points
-out <- envcpt(oil_ts, verbose=0, models=models, minseglen=6) 
+# Find Change points & Limit Minimum Period length to 5% of Well History
+out <- envcpt(oil_ts, verbose=0, models=models, minseglen=as.integer(0.05*length(df.index),0))
 # Note you can change Min length as needed
 AIC(out)
 plot(out, type="fit")
