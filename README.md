@@ -8,5 +8,5 @@ Decline Curve Analysis (DCA) is a widely accepted method for analyzing declining
 
 
 ## References
-<a id="1">[1]</a> 
-https://petrowiki.spe.org/Production_forecasting_decline_curve_analysis#:~:text=Decline%20curve%20analysis%20(DCA)%20is,fluids%2C%20are%20usually%20the%20cause.
+<a id="1">[https://petrowiki.spe.org/Production_forecasting_decline_curve_analysis#:~:text=Decline%20curve%20analysis%20(DCA)%20is,fluids%2C%20are%20usually%20the%20cause.]</a> 
+
