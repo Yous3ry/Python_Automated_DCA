@@ -14,7 +14,7 @@ Decline Curve Analysis (DCA) is a widely accepted method for analyzing declining
 ![alt text](https://github.com/Yous3ry/Python_Automated_DCA/blob/main/Sample_Well_1_ChangeDetection.png)
 
 ## Dependencies
-Python Packages <- sqlalchemy, scipy, matplotlib, pandas, numpy, json, rpy2
+Python Packages <- sqlalchemy, scipy, matplotlib, pandas, numpy, json, rpy2_
 R Packages <- EnvCpt
 
 ## Executing program
