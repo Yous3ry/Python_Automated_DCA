@@ -27,6 +27,7 @@ R Packages <- EnvCpt
 
 ## References
 <a id="1">[1]</a> 
-https://petrowiki.spe.org/Production_forecasting_decline_curve_analysis#:~:text=Decline%20curve%20analysis%20(DCA)%20is,fluids%2C%20are%20usually%20the%20cause.\
+https://petrowiki.spe.org/Production_forecasting_decline_curve_analysis#:~:text=Decline%20curve%20analysis%20(DCA)%20is,fluids%2C%20are%20usually%20the%20cause.
+<br>
 <a id="1">[2]</a> 
 https://rdrr.io/cran/EnvCpt/man/envcpt.html
