@@ -6,7 +6,9 @@ from dateutil.relativedelta import relativedelta
 
 
 def get_well_data():
-    data = pd.read_csv("Sample_Well.csv")
+    # Read dample well data CSV
+    # data = pd.read_csv("Sample_Well.csv")
+    data = pd.read_csv("D:\\well.csv")
     # ensure date format
     data["Date"] = pd.to_datetime(data["Date"])
     return data
@@ -217,5 +219,3 @@ plt.title("Forecast using {} Decline with Base Case Di = {} and b = {}"
           .format(decline_method, round(di, 2), round(b, 2)))
 plt.show()
 
-
-# Note For Gitbash remember PATH to RScript

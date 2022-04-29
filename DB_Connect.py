@@ -28,7 +28,7 @@ def read_prod_data(connection, table, target_well):
     """
     # read SQL as dataframe
     df = pd.read_sql('''SELECT * FROM {}
-    WHERE ITEM_NAME LIKE '{}';'''.format(table, target_well), connection)
+    WHERE HEADERID LIKE '{}%';'''.format(table, target_well), connection)
     return df
 
 
@@ -41,9 +41,16 @@ print("Login Credentials", login_data)
 conn = conn_DB(login_data)
 
 # Define Database table to read data from
-prod_table = "VT_TOTALS_DAY_en_US"
+prod_table = "KPC_OFM_MTH_PRD"
 well = "BERENICE-01"
 
 # returns desired well production dataframe
 prod_df = read_prod_data(conn, prod_table, well)
 print(prod_df)
+
+# Export to CSV
+# Converts date to end of month
+prod_df["Date"]=pd.to_datetime(prod_df["START_DATETIME"])+ pd.offsets.MonthEnd(0)
+# Converts Oil Volume to oil rate
+prod_df["OIL_RATE"]=prod_df["ALLOCATED OIL"] / prod_df["Date"].dt.day
+prod_df[["Date", "OIL_RATE"]].to_csv("D:\\well.csv", index=False)
