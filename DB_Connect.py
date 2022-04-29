@@ -53,4 +53,4 @@ print(prod_df)
 prod_df["Date"]=pd.to_datetime(prod_df["START_DATETIME"])+ pd.offsets.MonthEnd(0)
 # Converts Oil Volume to oil rate
 prod_df["OIL_RATE"]=prod_df["ALLOCATED OIL"] / prod_df["Date"].dt.day
-prod_df[["Date", "OIL_RATE"]].to_csv("D:\\well.csv", index=False)
+prod_df[["Date", "OIL_RATE"]].to_csv("well.csv", index=False)
