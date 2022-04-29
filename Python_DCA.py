@@ -7,8 +7,7 @@ from dateutil.relativedelta import relativedelta
 
 def get_well_data():
     # Read dample well data CSV
-    # data = pd.read_csv("Sample_Well.csv")
-    data = pd.read_csv("D:\\well.csv")
+    data = pd.read_csv("Sample_Well.csv")
     # ensure date format
     data["Date"] = pd.to_datetime(data["Date"])
     return data
