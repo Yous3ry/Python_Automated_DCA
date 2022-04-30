@@ -178,6 +178,10 @@ decline_method = "Hyperbolic"  # Hyperbolic or Exponential
 
 # get well data
 well_data = get_well_data()
+# Next if well history is empty
+if len(well_data) == 0:
+    print("Insufficient history")
+    exit()
 # remove first rows if prod is zero
 if well_data["OIL_RATE"][0] == 0:
     first_prod_idx = np.where(well_data["OIL_RATE"] > 0)[0][0]
@@ -208,11 +212,11 @@ for k, l in groups:
     cursor += l
 if len(result) > 0 and result[-1][1] not in change_points:
     if result[-1][1] not in change_points:
-        filtered_well_data = filtered_well_data[result[-1][0]:]
-        filtered_well_data.reset_index(inplace=True, drop=True)
         change_points.append(result[-1][0])
         change_points.append(result[-1][1])
         change_dates = well_data.loc[change_points, "Date"].to_list()
+        filtered_well_data = well_data[well_data["Date"] > change_dates[-1]].copy()
+        filtered_well_data.reset_index(inplace=True, drop=True)
 
 # correct for too short last filtered data
 if len(filtered_well_data) < 6:
