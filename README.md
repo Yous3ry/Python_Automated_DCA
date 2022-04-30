@@ -13,7 +13,7 @@ Decline Curve Analysis (DCA) is a widely accepted method for analyzing declining
 
 ## Workflow
 1. Connect to production database to read well data ([Python File here](https://github.com/Yous3ry/Python_Automated_DCA/blob/main/DB_Connect.py))
-2. Use R to detect change points assuming a piecewise linear trend using EnvCpt Package[[2]](#2) as shown in example below ([R File here](https://github.com/Yous3ry/Python_Automated_DCA/blob/main/Change_Detection.R))
+2. Use R to detect change points assuming a piecewise linear trend using EnvCpt Package[[2]](#ref-2) as shown in example below ([R File here](https://github.com/Yous3ry/Python_Automated_DCA/blob/main/Change_Detection.R))
 ![alt text](https://github.com/Yous3ry/Python_Automated_DCA/blob/main/Sample_Well_1_ChangeDetection.png)
 3. Finally the compiled Python ([Final Python File here](https://github.com/Yous3ry/Python_Automated_DCA/blob/main/Python_DCA.py)) file is used to a) Load Well Data b) detect change points c) fit exponential or Hyperbolic decline based on user input on the last stable period d) Forecast production rate. Note forecast is limited by user minimum rate and forecast period.
 ![alt_text](https://github.com/Yous3ry/Python_Automated_DCA/blob/main/Sample_Well_1_Forecast_Results.png)
