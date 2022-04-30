@@ -174,8 +174,6 @@ if len(well_data) < 12:
 change_points = detect_change(well_data)
 # find trend change dates
 change_dates = well_data.loc[change_points, "Date"].to_list()
-# find trend change dates
-change_dates = well_data.loc[change_points, "Date"].to_list()
 # filter data for decline curve analysis fit
 if len(change_dates) > 0:  # corrects for if no change occurred
     filtered_well_data = well_data[well_data["Date"] > change_dates[-1]].copy()
