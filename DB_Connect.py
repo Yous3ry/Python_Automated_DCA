@@ -27,8 +27,10 @@ def read_prod_data(connection, table, target_well):
     :return: Production & injection df and Well locations & types df
     """
     # read SQL as dataframe
-    df = pd.read_sql('''SELECT * FROM {}
-    WHERE HEADERID LIKE '{}%';'''.format(table, target_well), connection)
+    df = pd.read_sql('''SELECT START_DATETIME, SUM("ALLOCATED OIL") AS ALLOCATED_OIL 
+    FROM {}
+    WHERE lower(HEADERID) LIKE lower('{}%')
+    Group by START_DATETIME;'''.format(table, target_well), connection)
     return df
 
 
@@ -46,11 +48,11 @@ well = "BERENICE-01"
 
 # returns desired well production dataframe
 prod_df = read_prod_data(conn, prod_table, well)
-print(prod_df)
 
-# Export to CSV
 # Converts date to end of month
-prod_df["Date"]=pd.to_datetime(prod_df["START_DATETIME"])+ pd.offsets.MonthEnd(0)
+prod_df["Date"] = pd.to_datetime(prod_df["START_DATETIME"]) + pd.offsets.MonthEnd(0)
 # Converts Oil Volume to oil rate
-prod_df["OIL_RATE"]=prod_df["ALLOCATED OIL"] / prod_df["Date"].dt.day
+prod_df["OIL_RATE"] = prod_df["ALLOCATED_OIL"] / prod_df["Date"].dt.day
+# Export to CSV
 prod_df[["Date", "OIL_RATE"]].to_csv("well.csv", index=False)
+print(prod_df)
