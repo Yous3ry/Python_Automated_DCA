@@ -115,7 +115,6 @@ def hyp_decline_fit(well_df, max_di_limit):
     upper_bounds = [max(well_df["OIL_RATE"])*1.5, max_di_limit/12, 1]
     params, pcov = curve_fit(hyp_decline, well_df["t_actual"], well_df["OIL_RATE"], bounds=(lower_bounds, upper_bounds))
     errors = np.sqrt(np.diagonal(pcov))
-    print(errors)
     qi_fit = params[0]
     di_fit = params[1]
     b_fit = params[2]
@@ -162,16 +161,34 @@ decline_method = "Hyperbolic"  # Hyperbolic or Exponential
 
 # get well data
 well_data = get_well_data()
-# filter 0 data points
-well_data = well_data[well_data["OIL_RATE"] > 0]
+# remove first rows if prod is zero
+first_prod_idx = np.where(well_data["OIL_RATE"] > 0)[0][0]
+well_data = well_data[first_prod_idx:]
 well_data.reset_index(inplace=True, drop=True)
 
+# Next well if well history < 12 months
+if len(well_data) < 12:
+    print("Insufficient history")
+    exit()
 # find change points
 change_points = detect_change(well_data)
 # find trend change dates
 change_dates = well_data.loc[change_points, "Date"].to_list()
+# find trend change dates
+change_dates = well_data.loc[change_points, "Date"].to_list()
 # filter data for decline curve analysis fit
-filtered_well_data = well_data[well_data["Date"] > change_dates[-1]].copy()
+if len(change_dates) > 0:  # corrects for if no change occurred
+    filtered_well_data = well_data[well_data["Date"] > change_dates[-1]].copy()
+else:
+    filtered_well_data = well_data.copy()
+print(filtered_well_data)
+# correct for too short last filtered data
+if len(filtered_well_data) < 6:
+    if len(change_dates) > 1:
+        filtered_well_data = well_data[well_data["Date"] > change_dates[-2]].copy()
+    else:
+        filtered_well_data = well_data.copy()
+        change_dates = []
 # reset index
 filtered_well_data.reset_index(inplace=True, drop=True)
 # removing leading any points < maximum oil rate
