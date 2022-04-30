@@ -1,8 +1,15 @@
-import numpy as np
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.optimize import OptimizeWarning
 from dateutil.relativedelta import relativedelta
+import warnings
+from itertools import groupby
+
+
+# Used to be able to capture optimizer warnings
+warnings.simplefilter("error", OptimizeWarning)
 
 
 def get_well_data():
@@ -27,6 +34,7 @@ def detect_change(well_df):
     from rpy2.robjects import pandas2ri
     from rpy2.robjects.conversion import localconverter
     import rpy2.robjects.packages as rpackages
+    from rpy2.rinterface_lib.embedded import RRuntimeError
 
     # Define Basic R packages
     base = rpackages.importr("base")
@@ -50,8 +58,11 @@ def detect_change(well_df):
     # define models to be used to find Change points
     models = ro.StrVector(["trendar1cpt", "trendar2cpt"])
     # Find Change points
-    if int(0.05*len(well_df)) >= 10:  # to avoid too small step sizes if dataset is very small
-        out = EnvCpt.envcpt(oil_ts, verbose=0, model=models, minseglen=int(0.05*len(well_df)))
+    if int(0.05 * len(well_df)) >= 12:  # to avoid too small step sizes if dataset is very small
+        try:
+            out = EnvCpt.envcpt(oil_ts, verbose=0, model=models, minseglen=int(0.05 * len(well_df)))
+        except RRuntimeError:
+            out = EnvCpt.envcpt(oil_ts, verbose=0, model=models)
     else:
         out = EnvCpt.envcpt(oil_ts, verbose=0, model=models)
     # find best model
@@ -93,7 +104,10 @@ def exp_decline_fit(well_df, max_di_limit):
     # Perform history match for exponential decline
     lower_bounds = [max(well_df["OIL_RATE"]), 0]  # Maximum oil rate as minimum for fitting
     upper_bounds = [max(well_df["OIL_RATE"])*1.5, max_di_limit/12]  # Maximum fit rate 1.5 max actual rate & max Di A.n.
-    params, pcov = curve_fit(exp_decline, well_df["t_actual"], well_df["OIL_RATE"], bounds=(lower_bounds, upper_bounds))
+    try:
+        params, pcov = curve_fit(exp_decline, well_df["t_actual"], well_df["OIL_RATE"], bounds=(lower_bounds, upper_bounds))
+    except OptimizeWarning:
+        return "error"
     errors = np.sqrt(np.diagonal(pcov))
     qi_fit = params[0]
     di_fit = params[1]
@@ -113,7 +127,10 @@ def hyp_decline_fit(well_df, max_di_limit):
     lower_bounds = [max(well_df["OIL_RATE"]), 0, 0]  # Maximum oil rate as minimum for fitting
     # Maximum fit rate 1.5 max actual rate & max Di A.n. & max 1 b (harmonic)
     upper_bounds = [max(well_df["OIL_RATE"])*1.5, max_di_limit/12, 1]
-    params, pcov = curve_fit(hyp_decline, well_df["t_actual"], well_df["OIL_RATE"], bounds=(lower_bounds, upper_bounds))
+    try:
+        params, pcov = curve_fit(hyp_decline, well_df["t_actual"], well_df["OIL_RATE"], bounds=(lower_bounds, upper_bounds))
+    except OptimizeWarning:
+        return "error"
     errors = np.sqrt(np.diagonal(pcov))
     qi_fit = params[0]
     di_fit = params[1]
@@ -162,10 +179,10 @@ decline_method = "Hyperbolic"  # Hyperbolic or Exponential
 # get well data
 well_data = get_well_data()
 # remove first rows if prod is zero
-first_prod_idx = np.where(well_data["OIL_RATE"] > 0)[0][0]
-well_data = well_data[first_prod_idx:]
-well_data.reset_index(inplace=True, drop=True)
-
+if well_data["OIL_RATE"][0] == 0:
+    first_prod_idx = np.where(well_data["OIL_RATE"] > 0)[0][0]
+    well_data = well_data[first_prod_idx:]
+    well_data.reset_index(inplace=True, drop=True)
 # Next well if well history < 12 months
 if len(well_data) < 12:
     print("Insufficient history")
@@ -179,7 +196,24 @@ if len(change_dates) > 0:  # corrects for if no change occurred
     filtered_well_data = well_data[well_data["Date"] > change_dates[-1]].copy()
 else:
     filtered_well_data = well_data.copy()
-print(filtered_well_data)
+
+# EnvCpt has a problem with consecutive 0s
+# finding last consecutive zero values and appending it to zero points and updated filtered well data
+groups = [(k, sum(1 for _ in g)) for k, g in groupby(filtered_well_data["OIL_RATE"])]
+cursor = 0
+result = []
+for k, l in groups:
+    if int(k) == 0 and l >= 5:
+        result.append([cursor, cursor + l - 1])
+    cursor += l
+if len(result) > 0 and result[-1][1] not in change_points:
+    if result[-1][1] not in change_points:
+        filtered_well_data = filtered_well_data[result[-1][0]:]
+        filtered_well_data.reset_index(inplace=True, drop=True)
+        change_points.append(result[-1][0])
+        change_points.append(result[-1][1])
+        change_dates = well_data.loc[change_points, "Date"].to_list()
+
 # correct for too short last filtered data
 if len(filtered_well_data) < 6:
     if len(change_dates) > 1:
@@ -189,6 +223,15 @@ if len(filtered_well_data) < 6:
         change_dates = []
 # reset index
 filtered_well_data.reset_index(inplace=True, drop=True)
+# stop if no production in filtered well data
+if sum(filtered_well_data["OIL_RATE"]) == 0:
+    print("Insufficient history")
+    exit()
+# remove first rows if prod is zero
+if filtered_well_data["OIL_RATE"][0] == 0:
+    first_prod_idx = np.where(filtered_well_data["OIL_RATE"] > 0)[0][0]
+    filtered_well_data = filtered_well_data[first_prod_idx:]
+    filtered_well_data.reset_index(inplace=True, drop=True)
 # removing leading any points < maximum oil rate
 max_rate_idx = np.where(filtered_well_data["OIL_RATE"] == max(filtered_well_data["OIL_RATE"]))[0][0]
 if max_rate_idx != 0:
@@ -200,16 +243,33 @@ filtered_well_data["t_actual"] = range(0, len(filtered_well_data))
 # correct forecast years to include fitting period
 forecast_periods = forecast_months + len(filtered_well_data)
 
+# initialize parameters
+qi, di, b, stds = 0, 0, 0, 0
+
+# Fork based on user input
 if decline_method == "Exponential":
     # Fit exponential decline
-    qi, di, stds = exp_decline_fit(filtered_well_data, max_di)
+    if exp_decline_fit(filtered_well_data, max_di) != "error":
+        qi, di, stds = exp_decline_fit(filtered_well_data, max_di)
+    else:
+        print("Poor decline trend")
+        exit()
     # Forecast production
     oil_forecast = exp_decline_forecast(qi, di, forecast_periods, minimum_oil_rate)
 elif decline_method == "Hyperbolic":
     # Fit Hyperbolic decline
-    qi, di, b, stds = hyp_decline_fit(filtered_well_data, max_di)
+    if hyp_decline_fit(filtered_well_data, max_di) != "error":
+        qi, di, b, stds = hyp_decline_fit(filtered_well_data, max_di)
+    else:
+        print("Poor decline trend")
+        exit()
     # Forecast production
     oil_forecast = hyp_decline_forecast(qi, di, b, forecast_periods, minimum_oil_rate)
+
+# Stop well if di == 0
+if di == 0:
+    print("No Decline trend")
+    exit()
 
 # prepare forecast dates
 forecast_dates = pd.date_range(min(filtered_well_data["Date"]),
@@ -225,7 +285,7 @@ forecast_df["OIL_RATE"] = oil_forecast
 
 # print results
 Cumulative_production = round(np.sum(well_data["OIL_RATE"])/1000*30.4, 0)
-Reserves = round(np.sum(oil_forecast)/1000*30.4, 0)
+Reserves = round(np.sum(oil_forecast[forecast_dates > max(filtered_well_data["Date"])]) / 1000 * 30.4, 0)
 EUR = Cumulative_production + Reserves
 print("cumulative production MSTB: {}".format(Cumulative_production))
 print("Remaining reserves MSTB: {}".format(Reserves))
