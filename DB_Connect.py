@@ -31,6 +31,16 @@ def read_prod_data(connection, table, target_well):
     FROM {}
     WHERE lower(HEADERID) LIKE lower('{}%')
     Group by START_DATETIME;'''.format(table, target_well), connection)
+    # prepare data
+    # Converts date to end of month
+    df["Date"] = pd.to_datetime(df["START_DATETIME"]) + pd.offsets.MonthEnd(0)
+    # Converts Oil Volume to oil rate
+    df["OIL_RATE"] = df["ALLOCATED_OIL"] / df["Date"].dt.day
+    # ensure data is sorted by date
+    df.sort_values(by="Date", inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    # Export to CSV
+    df[["Date", "OIL_RATE"]].to_csv("well.csv", index=False)
     return df
 
 
@@ -48,11 +58,4 @@ well = "BERENICE-01"
 
 # returns desired well production dataframe
 prod_df = read_prod_data(conn, prod_table, well)
-
-# Converts date to end of month
-prod_df["Date"] = pd.to_datetime(prod_df["START_DATETIME"]) + pd.offsets.MonthEnd(0)
-# Converts Oil Volume to oil rate
-prod_df["OIL_RATE"] = prod_df["ALLOCATED_OIL"] / prod_df["Date"].dt.day
-# Export to CSV
-prod_df[["Date", "OIL_RATE"]].to_csv("well.csv", index=False)
 print(prod_df)
