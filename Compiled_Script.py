@@ -220,7 +220,7 @@ def hyp_decline_forecast(q, d, b, tmax=1000, qmin=20):
 
 # Define user forecast constraints
 prod_table = "KPC_OFM_MTH_PRD"
-target_field = "TUT"  # append empty string for all wells for a specific well, use well name
+target_field = "FIELD_NAME"  # append empty string for all wells for a specific well, use well name
 minimum_oil_rate = 10  # Barrel Oil per Day
 forecast_months = 120
 max_di = 5  # A.n.
